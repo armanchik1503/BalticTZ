@@ -1,0 +1,52 @@
+version: '3.7'
+
+networks:
+  local-network:
+    driver: bridge
+
+services:
+  # Nginx
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./_docker/nginx/conf.d/nginx.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - "85:80"
+    depends_on:
+      - laravel
+    container_name: nginx
+    networks:
+      - local-network
+
+  # Laravel
+  laravel:
+    build:
+      context: .
+      dockerfile: _docker/app/Dockerfile
+    volumes:
+      - '.:/var/www/html'
+    depends_on:
+      - postgres
+    networks:
+      - local-network
+    container_name: app
+
+  # PostgreSQL
+  postgres:
+    image: postgres:13.0
+    container_name: pgsql
+    restart: always
+    volumes:
+      - '/var/lib/mysql:/var/lib/postgresql/data'
+    ports:
+      - "5435:5432"
+    environment:
+      - POSTGRES_DB=$DB_DATABASE
+      - POSTGRES_USER=$DB_USERNAME
+      - POSTGRES_PASSWORD=$DB_PASSWORD
+    networks:
+      - local-network
+
+volumes:
+  postgresql-data:
+    driver: local
